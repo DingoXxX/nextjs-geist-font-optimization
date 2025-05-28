@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  firstName           String
+  lastName            String
+  phone               String?
+  dateOfBirth         DateTime
+  hashedSSN           String
+  idType              String
+  idNumber            String
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  kycStatus           KYCStatus     @default(PENDING)
+  accountStatus       AccountStatus @default(PENDING)
+  
+  // Security and Authentication
+  lastOtpRequest      DateTime?
+  lastOtpVerification DateTime?
+  otpSecret           String?
+  otpEnabled          Boolean       @default(false)
+  otpExpiresAt        DateTime?
+  
+  // Address information
+  address             Address?
+  
+  // Document verification
+  documents           Document[]
+  
+  // Digital certificates
+  certificates        DigitalCertificate[]
+
+  @@map("users")
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  street      String
+  city        String
+  state       String
+  postalCode  String
+  country     String
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("addresses")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  type        String
+  number      String
+  issuedBy    String
+  issuedDate  DateTime
+  expiryDate  DateTime
+  status      String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("documents")
+}
+
+model DigitalCertificate {
+  id          String   @id @default(uuid())
+  assetId     String
+  issuedAt    DateTime @default(now())
+  validUntil  DateTime
+  status      String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("digital_certificates")
+}
+
+enum KYCStatus {
+  PENDING
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
